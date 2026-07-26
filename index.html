@@ -30,10 +30,11 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-1">1. 모델 선택</label>
                 <select id="modelSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
                     <option value="rwd" selected>모델 Y RWD (LFP)</option>
+                    <option value="longrange">모델 Y 롱레인지 AWD</option>
+                    <option value="model_y_l">모델 Y L (6인승)</option>
                     <option value="model3_rwd">모델 3 RWD</option>
                     <option value="model3_longrange">모델 3 롱레인지</option>
-                    <option value="awd">모델 Y AWD</option>
-                    <option value="longrange">모델 Y 롱레인지</option>
+                    <option value="model3_perf">모델 3 퍼포먼스</option>
                 </select>
             </div>
 
@@ -58,9 +59,9 @@
             </button>
         </div>
 
-        <!-- 결과 표시 영역 (순서: 1.보조금 분석 -> 2.작년도 보조금 -> 3.지자체 소진 현황 -> 4.자격 진단) -->
+        <!-- 결과 표시 영역 (순서: 1.기본보조금 -> 2.전환지원금 -> 3.작년 비교 -> 4.소진 현황 -> 5.자격 진단) -->
         <div id="resultArea" class="mt-6 space-y-4 hidden">
-            <!-- 1. 보조금 분석 카드 -->
+            <!-- 1. 기본 보조금 카드 (ev.or.kr 기준: 국비+지방비) -->
             <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <h2 class="text-sm font-bold text-blue-900 mb-2" id="resTitle">조회 결과</h2>
                 <div class="text-xs text-gray-600 mb-3 flex justify-between items-center">
@@ -68,25 +69,26 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-2 text-center">
-                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
-                        <div class="text-xs text-gray-500">올해 국고 보조금</div>
-                        <div class="text-sm font-bold text-blue-600 mt-0.5" id="resNatCurrent"></div>
+                    <div class="bg-white p-2 rounded-lg border border-blue-100">
+                        <div class="text-[11px] text-gray-500">국고 보조금</div>
+                        <div class="text-xs font-bold text-blue-600 mt-0.5" id="resNatCurrent"></div>
                     </div>
-                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
-                        <div class="text-xs text-gray-500">올해 지자체 보조금</div>
-                        <div class="text-sm font-bold text-blue-600 mt-0.5" id="resLocalCurrent"></div>
+                    <div class="bg-white p-2 rounded-lg border border-blue-100">
+                        <div class="text-[11px] text-gray-500">지자체 보조금</div>
+                        <div class="text-xs font-bold text-blue-600 mt-0.5" id="resLocalCurrent"></div>
                     </div>
                 </div>
 
                 <div class="mt-3 pt-3 border-t border-blue-200 flex justify-between items-center">
-                    <span class="text-sm font-medium text-gray-700">올해 총 보조금:</span>
-                    <span class="text-base font-extrabold text-blue-700" id="resTotalCurrent"></span>
+                    <span class="text-sm font-medium text-gray-700">기본 보조금 합계:</span>
+                    <span class="text-base font-extrabold text-blue-700" id="resTotalBase"></span>
                 </div>
 
                 <div class="mt-1 flex justify-between items-center">
-                    <span class="text-sm font-medium text-gray-700">최종 예상 실구매가:</span>
-                    <span class="text-lg font-black text-rose-600" id="resFinalPrice"></span>
+                    <span class="text-sm font-medium text-gray-700">기본 실구매가:</span>
+                    <span class="text-lg font-black text-rose-600" id="resFinalBase"></span>
                 </div>
+                <div class="mt-1 text-[10px] text-gray-400 text-right">* 무공해차 누리집(ev.or.kr) 기준 국비+지방비</div>
             </div>
 
             <!-- 2. 작년 비교 카드 -->
@@ -104,7 +106,34 @@
                 </div>
             </div>
 
-            <!-- 3. 지자체 소진 현황 배지 카드 -->
+            <!-- 3. 전환지원금 별도 카드 -->
+            <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <h3 class="text-xs font-bold text-purple-900 mb-2">➕ 전환지원금 (내연차 폐차 시 추가)</h3>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-white p-2 rounded-lg border border-purple-100">
+                        <div class="text-[11px] text-gray-500">전환지원금(국비)</div>
+                        <div class="text-xs font-bold text-purple-600 mt-0.5" id="resConvNat"></div>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-purple-100">
+                        <div class="text-[11px] text-gray-500">전환지원금(지방)</div>
+                        <div class="text-xs font-bold text-purple-600 mt-0.5" id="resConvLocal"></div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-purple-200 flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">전환지원금 합계:</span>
+                    <span class="text-base font-extrabold text-purple-700" id="resConvTotal"></span>
+                </div>
+                <div class="mt-2 pt-2 border-t border-purple-200 flex justify-between items-center">
+                    <span class="text-sm font-bold text-gray-800">전환 포함 총 보조금:</span>
+                    <span class="text-base font-extrabold text-indigo-700" id="resTotalAll"></span>
+                </div>
+                <div class="mt-1 flex justify-between items-center">
+                    <span class="text-sm font-bold text-gray-800">전환 포함 실구매가:</span>
+                    <span class="text-lg font-black text-rose-600" id="resFinalAll"></span>
+                </div>
+            </div>
+
+            <!-- 4. 지자체 소진 현황 배지 카드 -->
             <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
                 <div>
                     <div class="text-[11px] text-amber-800 font-bold">지자체 예산 소진 현황</div>
@@ -115,7 +144,7 @@
                 </div>
             </div>
 
-            <!-- 4. 자격 진단 체크리스트 -->
+            <!-- 5. 자격 진단 체크리스트 -->
             <div id="eligibilityCard" class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 transition duration-300">
                 <h3 class="text-xs font-bold text-emerald-900 mb-2">✅ 내 보조금 수령 자격 자가진단</h3>
                 <div class="space-y-2 text-xs text-emerald-800">
@@ -183,11 +212,12 @@
     <!-- 로직 스크립트 -->
     <script>
         const carData = {
-            model3_rwd: { name: "모델 3 RWD", price: 5199, natCurr: 220, natLast: 226 },
-            model3_longrange: { name: "모델 3 롱레인지", price: 5999, natCurr: 240, natLast: 250 },
-            rwd: { name: "모델 Y RWD (LFP)", price: 4999, natCurr: 195, natLast: 211 },
-            awd: { name: "모델 Y AWD", price: 7299, natCurr: 210, natLast: 230 },
-            longrange: { name: "모델 Y 롱레인지", price: 6999, natCurr: 230, natLast: 250 }
+            rwd: { name: "모델 Y RWD (LFP)", price: 4999, natCurr: 170, convNat: 34, natLast: 211 },
+            longrange: { name: "모델 Y 롱레인지 AWD", price: 6699, natCurr: 210, convNat: 42, natLast: 240 },
+            model_y_l: { name: "모델 Y L (6인승)", price: 7299, natCurr: 210, convNat: 42, natLast: 230 },
+            model3_rwd: { name: "모델 3 RWD", price: 4699, natCurr: 168, convNat: 34, natLast: 200 },
+            model3_longrange: { name: "모델 3 롱레인지", price: 5999, natCurr: 210, convNat: 42, natLast: 230 },
+            model3_perf: { name: "모델 3 퍼포먼스", price: 6999, natCurr: 200, convNat: 40, natLast: 220 }
         };
 
         const regionsData = {
@@ -195,152 +225,263 @@
                 name: "서울특별시",
                 status: { text: "접수 원활 (잔여 예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    jongno: { name: "종로구", localCurr: 50, localLast: 70 },
-                    jung: { name: "중구", localCurr: 50, localLast: 70 },
-                    yongsan: { name: "용산구", localCurr: 50, localLast: 70 },
-                    seongdong: { name: "성동구", localCurr: 50, localLast: 70 },
-                    gangnam: { name: "강남구", localCurr: 50, localLast: 70 },
-                    seocho: { name: "서초구", localCurr: 50, localLast: 70 },
-                    songpa: { name: "송파구", localCurr: 50, localLast: 70 },
-                    other: { name: "기타 자치구", localCurr: 50, localLast: 70 }
-                }
-            },
-            gyeonggi: {
-                name: "경기도",
-                status: { text: "일부 시·군 소진 임박 (주의)", badge: "🟡 주의", class: "bg-amber-100 text-amber-800" },
-                districts: {
-                    seongnam: { name: "성남시", localCurr: 350, localLast: 400 },
-                    suwon: { name: "수원시", localCurr: 320, localLast: 380 },
-                    yongin: { name: "용인시", localCurr: 330, localLast: 390 },
-                    goyang: { name: "고양시", localCurr: 300, localLast: 350 },
-                    hwaseong: { name: "화성시", localCurr: 340, localLast: 400 },
-                    bucheon: { name: "부천시", localCurr: 280, localLast: 330 },
-                    ansan: { name: "안산시", localCurr: 290, localLast: 340 },
-                    other: { name: "기타 시/군", localCurr: 300, localLast: 350 }
-                }
-            },
-            incheon: {
-                name: "인천광역시",
-                status: { text: "접수 원활 (예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
-                districts: {
-                    namdong: { name: "남동구", localCurr: 180, localLast: 200 },
-                    yeonsu: { name: "연수구", localCurr: 180, localLast: 200 },
-                    seo: { name: "서구", localCurr: 180, localLast: 200 },
-                    bupyeong: { name: "부평구", localCurr: 180, localLast: 200 },
-                    other: { name: "기타 구/군", localCurr: 180, localLast: 200 }
+                    district0: { name: "서울특별시", localRate: 0.30, convLocal: 10 }
                 }
             },
             busan: {
                 name: "부산광역시",
                 status: { text: "예산 소진 임박 (잔여 15% 미만)", badge: "🟠 임박", class: "bg-orange-100 text-orange-800" },
                 districts: {
-                    haeundae: { name: "해운대구", localCurr: 250, localLast: 300 },
-                    busanjin: { name: "부산진구", localCurr: 250, localLast: 300 },
-                    other: { name: "기타 구/군", localCurr: 250, localLast: 300 }
+                    district0: { name: "부산광역시", localRate: 0.30, convLocal: 10 }
                 }
             },
             daegu: {
                 name: "대구광역시",
                 status: { text: "접수 원활 (예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    suseong: { name: "수성구", localCurr: 300, localLast: 350 },
-                    dalseo: { name: "달서구", localCurr: 300, localLast: 350 },
-                    other: { name: "기타 구/군", localCurr: 300, localLast: 350 }
+                    district0: { name: "대구광역시", localRate: 0.30, convLocal: 10 }
+                }
+            },
+            incheon: {
+                name: "인천광역시",
+                status: { text: "접수 원활 (예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    district0: { name: "인천광역시", localRate: 0.30, convLocal: 10 }
                 }
             },
             gwangju: {
                 name: "광주광역시",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
-                districts: { all: { name: "전 지역", localCurr: 350, localLast: 400 } }
+                districts: {
+                    district0: { name: "광주광역시", localRate: 0.30, convLocal: 10 }
+                }
             },
             daejeon: {
                 name: "대전광역시",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
-                districts: { all: { name: "전 지역", localCurr: 320, localLast: 370 } }
+                districts: {
+                    district0: { name: "대전광역시", localRate: 0.30, convLocal: 10 }
+                }
             },
             ulsan: {
                 name: "울산광역시",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
-                districts: { all: { name: "전 지역", localCurr: 400, localLast: 450 } }
+                districts: {
+                    district0: { name: "울산광역시", localRate: 0.30, convLocal: 10 }
+                }
             },
             sejong: {
                 name: "세종특별자치시",
                 status: { text: "예산 소진 마감 임박", badge: "🟠 임박", class: "bg-orange-100 text-orange-800" },
-                districts: { all: { name: "세종시", localCurr: 300, localLast: 350 } }
+                districts: {
+                    district0: { name: "세종시", localRate: 0.30, convLocal: 10 }
+                }
+            },
+            gyeonggi: {
+                name: "경기도",
+                status: { text: "일부 시·군 소진 임박 (주의)", badge: "🟡 주의", class: "bg-amber-100 text-amber-800" },
+                districts: {
+                    suwon: { name: "수원시", localRate: 0.412, convLocal: 10 },
+                    seongnam: { name: "성남시", localRate: 0.447, convLocal: 10 },
+                    uijeongbu: { name: "의정부시", localRate: 0.365, convLocal: 10 },
+                    anyang: { name: "안양시", localRate: 0.424, convLocal: 10 },
+                    bucheon: { name: "부천시", localRate: 0.30, convLocal: 10 },
+                    gwangmyeong: { name: "광명시", localRate: 0.70, convLocal: 10 },
+                    pyeongtaek: { name: "평택시", localRate: 0.50, convLocal: 10 },
+                    dongducheon: { name: "동두천시", localRate: 0.559, convLocal: 10 },
+                    ansan: { name: "안산시", localRate: 0.40, convLocal: 10 },
+                    goyang: { name: "고양시", localRate: 0.40, convLocal: 10 },
+                    gwacheon: { name: "과천시", localRate: 0.50, convLocal: 10 },
+                    guri: { name: "구리시", localRate: 0.50, convLocal: 10 },
+                    namyangju: { name: "남양주시", localRate: 0.30, convLocal: 10 },
+                    osan: { name: "오산시", localRate: 0.467, convLocal: 10 },
+                    siheung: { name: "시흥시", localRate: 0.40, convLocal: 10 },
+                    gunpo: { name: "군포시", localRate: 0.482, convLocal: 10 },
+                    uiwang: { name: "의왕시", localRate: 0.50, convLocal: 10 },
+                    hanam: { name: "하남시", localRate: 0.30, convLocal: 10 },
+                    yongin: { name: "용인시", localRate: 0.433, convLocal: 10 },
+                    paju: { name: "파주시", localRate: 0.50, convLocal: 10 },
+                    ichoen: { name: "이천시", localRate: 0.50, convLocal: 10 },
+                    anseong: { name: "안성시", localRate: 0.60, convLocal: 10 },
+                    gimpo: { name: "김포시", localRate: 0.40, convLocal: 10 },
+                    hwaseong: { name: "화성시", localRate: 0.333, convLocal: 10 },
+                    gwangsigyeonggi: { name: "광주시", localRate: 0.30, convLocal: 10 },
+                    yangju: { name: "양주시", localRate: 0.412, convLocal: 10 },
+                    pocheon: { name: "포천시", localRate: 0.40, convLocal: 10 },
+                    yeoju: { name: "여주시", localRate: 0.688, convLocal: 10 },
+                    yeoncheon: { name: "연천군", localRate: 0.947, convLocal: 10 },
+                    gapyeong: { name: "가평군", localRate: 0.333, convLocal: 10 },
+                    yangpyeong: { name: "양평군", localRate: 0.667, convLocal: 10 }
+                }
             },
             gangwon: {
                 name: "강원특별자치도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    chuncheon: { name: "춘천시", localCurr: 450, localLast: 500 },
-                    wonju: { name: "원주시", localCurr: 450, localLast: 500 },
-                    gangneung: { name: "강릉시", localCurr: 480, localLast: 530 },
-                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                    chuncheon: { name: "춘천시", localRate: 0.50, convLocal: 10 },
+                    wonju: { name: "원주시", localRate: 0.50, convLocal: 10 },
+                    gangneung: { name: "강릉시", localRate: 0.50, convLocal: 10 },
+                    donghae: { name: "동해시", localRate: 0.50, convLocal: 10 },
+                    taebaek: { name: "태백시", localRate: 0.50, convLocal: 10 },
+                    sokcho: { name: "속초시", localRate: 0.50, convLocal: 10 },
+                    samcheok: { name: "삼척시", localRate: 0.50, convLocal: 10 },
+                    hongcheon: { name: "홍천군", localRate: 0.50, convLocal: 10 },
+                    hoengseong: { name: "횡성군", localRate: 0.50, convLocal: 10 },
+                    yeongwol: { name: "영월군", localRate: 0.50, convLocal: 10 },
+                    pyeongchang: { name: "평창군", localRate: 0.50, convLocal: 10 },
+                    jeongseon: { name: "정선군", localRate: 0.50, convLocal: 10 },
+                    cheorwon: { name: "철원군", localRate: 0.50, convLocal: 10 },
+                    hwacheon: { name: "화천군", localRate: 0.50, convLocal: 10 },
+                    yanggu: { name: "양구군", localRate: 0.50, convLocal: 10 },
+                    inje: { name: "인제군", localRate: 0.50, convLocal: 10 },
+                    goseong_gangwon: { name: "고성군", localRate: 0.50, convLocal: 10 },
+                    yangyang: { name: "양양군", localRate: 0.50, convLocal: 10 }
                 }
             },
             chungbuk: {
                 name: "충청북도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    cheongju: { name: "청주시", localCurr: 400, localLast: 450 },
-                    chungju: { name: "충주시", localCurr: 420, localLast: 470 },
-                    other: { name: "기타 시/군", localCurr: 410, localLast: 460 }
+                    cheongju: { name: "청주시", localRate: 1.00, convLocal: 10 },
+                    chungju: { name: "충주시", localRate: 1.00, convLocal: 10 },
+                    jecheon: { name: "제천시", localRate: 1.00, convLocal: 10 },
+                    boeun: { name: "보은군", localRate: 1.00, convLocal: 10 },
+                    okcheon: { name: "옥천군", localRate: 1.00, convLocal: 10 },
+                    yeongdong: { name: "영동군", localRate: 1.00, convLocal: 10 },
+                    jeungpyeong: { name: "증평군", localRate: 1.00, convLocal: 10 },
+                    jincheon: { name: "진천군", localRate: 1.00, convLocal: 10 },
+                    goesan: { name: "괴산군", localRate: 1.00, convLocal: 10 },
+                    eumseong: { name: "음성군", localRate: 1.00, convLocal: 10 },
+                    danyang: { name: "단양군", localRate: 1.00, convLocal: 10 }
                 }
             },
             chungnam: {
                 name: "충청남도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    cheonan: { name: "천안시", localCurr: 420, localLast: 470 },
-                    asan: { name: "아산시", localCurr: 430, localLast: 480 },
-                    other: { name: "기타 시/군", localCurr: 420, localLast: 470 }
+                    cheonan: { name: "천안시", localRate: 1.033, convLocal: 10 },
+                    gongju: { name: "공주시", localRate: 1.033, convLocal: 10 },
+                    boryeong: { name: "보령시", localRate: 1.033, convLocal: 10 },
+                    asan: { name: "아산시", localRate: 1.033, convLocal: 10 },
+                    seosan: { name: "서산시", localRate: 1.033, convLocal: 10 },
+                    nonsan: { name: "논산시", localRate: 1.033, convLocal: 10 },
+                    gyeryong: { name: "계룡시", localRate: 1.033, convLocal: 10 },
+                    dangjin: { name: "당진시", localRate: 1.033, convLocal: 10 },
+                    geumsan: { name: "금산군", localRate: 1.033, convLocal: 10 },
+                    buyeo: { name: "부여군", localRate: 1.033, convLocal: 10 },
+                    seocheon: { name: "서천군", localRate: 1.033, convLocal: 10 },
+                    cheongyang: { name: "청양군", localRate: 1.033, convLocal: 10 },
+                    hongseong: { name: "홍성군", localRate: 1.033, convLocal: 10 },
+                    yesan: { name: "예산군", localRate: 1.033, convLocal: 10 },
+                    taean: { name: "태안군", localRate: 1.033, convLocal: 10 }
                 }
             },
             jeonbuk: {
                 name: "전북특별자치도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    jeonju: { name: "전주시", localCurr: 450, localLast: 500 },
-                    gunsan: { name: "군산시", localCurr: 480, localLast: 530 },
-                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                    jeonju: { name: "전주시", localRate: 1.082, convLocal: 10 },
+                    gunsan: { name: "군산시", localRate: 1.082, convLocal: 10 },
+                    iksan: { name: "익산시", localRate: 1.082, convLocal: 10 },
+                    jeongeup: { name: "정읍시", localRate: 1.082, convLocal: 10 },
+                    namwon: { name: "남원시", localRate: 1.082, convLocal: 10 },
+                    gimje: { name: "김제시", localRate: 1.082, convLocal: 10 },
+                    wanju: { name: "완주군", localRate: 1.082, convLocal: 10 },
+                    jinan: { name: "진안군", localRate: 1.082, convLocal: 10 },
+                    muju: { name: "무주군", localRate: 1.082, convLocal: 10 },
+                    jangsu: { name: "장수군", localRate: 1.082, convLocal: 10 },
+                    imsil: { name: "임실군", localRate: 1.082, convLocal: 10 },
+                    suchang: { name: "순창군", localRate: 1.082, convLocal: 10 },
+                    gochang: { name: "고창군", localRate: 1.082, convLocal: 10 },
+                    buan: { name: "부안군", localRate: 1.082, convLocal: 10 }
                 }
             },
             jeonnam: {
                 name: "전라남도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    yeosu: { name: "여수시", localCurr: 500, localLast: 550 },
-                    suncheon: { name: "순천시", localCurr: 500, localLast: 550 },
-                    mokpo: { name: "목포시", localCurr: 520, localLast: 570 },
-                    other: { name: "기타 시/군", localCurr: 500, localLast: 550 }
+                    mokpo: { name: "목포시", localRate: 0.70, convLocal: 10 },
+                    yeosu: { name: "여수시", localRate: 0.70, convLocal: 10 },
+                    suncheon: { name: "순천시", localRate: 0.70, convLocal: 10 },
+                    naju: { name: "나주시", localRate: 0.70, convLocal: 10 },
+                    gwangyang: { name: "광양시", localRate: 0.50, convLocal: 10 },
+                    damyang: { name: "담양군", localRate: 1.333, convLocal: 10 },
+                    gokseong: { name: "곡성군", localRate: 1.00, convLocal: 10 },
+                    gurye: { name: "구례군", localRate: 1.29, convLocal: 10 },
+                    goheung: { name: "고흥군", localRate: 1.50, convLocal: 10 },
+                    boseong: { name: "보성군", localRate: 1.50, convLocal: 10 },
+                    hwasun: { name: "화순군", localRate: 1.00, convLocal: 10 },
+                    jangheung: { name: "장흥군", localRate: 1.333, convLocal: 10 },
+                    gangjin: { name: "강진군", localRate: 1.333, convLocal: 10 },
+                    haenam: { name: "해남군", localRate: 1.40, convLocal: 10 },
+                    yeongam: { name: "영암군", localRate: 1.30, convLocal: 10 },
+                    muan: { name: "무안군", localRate: 1.00, convLocal: 10 },
+                    hampyeong: { name: "함평군", localRate: 1.165, convLocal: 10 },
+                    yeonggwang: { name: "영광군", localRate: 1.20, convLocal: 10 },
+                    jangseong: { name: "장성군", localRate: 1.00, convLocal: 10 },
+                    wando: { name: "완도군", localRate: 1.50, convLocal: 10 },
+                    jindo: { name: "진도군", localRate: 1.40, convLocal: 10 },
+                    sinan: { name: "신안군", localRate: 1.00, convLocal: 10 }
                 }
             },
             gyeongbuk: {
                 name: "경상북도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    pohang: { name: "포항시", localCurr: 450, localLast: 500 },
-                    gyeongju: { name: "경주시", localCurr: 480, localLast: 530 },
-                    gumi: { name: "구미시", localCurr: 460, localLast: 510 },
-                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                    pohang: { name: "포항시", localRate: 1.029, convLocal: 10 },
+                    gyeongju: { name: "경주시", localRate: 1.029, convLocal: 10 },
+                    gimcheon: { name: "김천시", localRate: 1.029, convLocal: 10 },
+                    andong: { name: "안동시", localRate: 1.029, convLocal: 10 },
+                    gumi: { name: "구미시", localRate: 1.029, convLocal: 10 },
+                    yeongju: { name: "영주시", localRate: 1.029, convLocal: 10 },
+                    yeongcheon: { name: "영천시", localRate: 1.029, convLocal: 10 },
+                    sangju: { name: "상주시", localRate: 1.029, convLocal: 10 },
+                    mungyeong: { name: "문경시", localRate: 1.029, convLocal: 10 },
+                    gyeongsan: { name: "경산시", localRate: 1.029, convLocal: 10 },
+                    uiseong: { name: "의성군", localRate: 1.029, convLocal: 10 },
+                    cheongsong: { name: "청송군", localRate: 1.029, convLocal: 10 },
+                    yeongyang: { name: "영양군", localRate: 1.029, convLocal: 10 },
+                    yeongdeok: { name: "영덕군", localRate: 1.029, convLocal: 10 },
+                    cheongdo: { name: "청도군", localRate: 1.029, convLocal: 10 },
+                    goryeong: { name: "고령군", localRate: 1.029, convLocal: 10 },
+                    seongju: { name: "성주군", localRate: 1.029, convLocal: 10 },
+                    chilgok: { name: "칠곡군", localRate: 1.029, convLocal: 10 },
+                    yecheon: { name: "예천군", localRate: 1.029, convLocal: 10 },
+                    bonghwa: { name: "봉화군", localRate: 1.029, convLocal: 10 },
+                    uljin: { name: "울진군", localRate: 1.029, convLocal: 10 },
+                    ulleung: { name: "울릉군", localRate: 1.886, convLocal: 10 }
                 }
             },
             gyeongnam: {
                 name: "경상남도",
                 status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
                 districts: {
-                    changwon: { name: "창원시", localCurr: 400, localLast: 450 },
-                    gimhae: { name: "김해시", localCurr: 420, localLast: 470 },
-                    jinju: { name: "진주시", localCurr: 420, localLast: 470 },
-                    other: { name: "기타 시/군", localCurr: 410, localLast: 460 }
+                    changwon: { name: "창원시", localRate: 0.30, convLocal: 10 },
+                    jinju: { name: "진주시", localRate: 0.30, convLocal: 10 },
+                    tongyeong: { name: "통영시", localRate: 0.952, convLocal: 10 },
+                    sacheon: { name: "사천시", localRate: 0.353, convLocal: 10 },
+                    gimhae: { name: "김해시", localRate: 0.30, convLocal: 10 },
+                    miryang: { name: "밀양시", localRate: 0.40, convLocal: 10 },
+                    geoje: { name: "거제시", localRate: 0.353, convLocal: 10 },
+                    yangsan: { name: "양산시", localRate: 0.30, convLocal: 10 },
+                    uiryeong: { name: "의령군", localRate: 0.30, convLocal: 10 },
+                    haman: { name: "함안군", localRate: 0.30, convLocal: 10 },
+                    changnyeong: { name: "창녕군", localRate: 0.70, convLocal: 10 },
+                    goseong_gyeongnam: { name: "고성군", localRate: 0.50, convLocal: 10 },
+                    namhae: { name: "남해군", localRate: 0.30, convLocal: 10 },
+                    hadong: { name: "하동군", localRate: 0.30, convLocal: 10 },
+                    sancheong: { name: "산청군", localRate: 0.30, convLocal: 10 },
+                    hamyang: { name: "함양군", localRate: 0.382, convLocal: 10 },
+                    geochang: { name: "거창군", localRate: 0.619, convLocal: 10 },
+                    hapcheon: { name: "합천군", localRate: 1.219, convLocal: 10 }
                 }
             },
             jeju: {
                 name: "제주특별자치도",
                 status: { text: "예산 소진 임박 (잔여 10% 미만)", badge: "🔴 마감임박", class: "bg-rose-100 text-rose-800" },
                 districts: {
-                    jeju: { name: "제주시", localCurr: 400, localLast: 450 },
-                    seogwipo: { name: "서귀포시", localCurr: 400, localLast: 450 }
+                    jeju: { name: "제주시", localRate: 0.688, convLocal: 10 },
+                    seogwipo: { name: "서귀포시", localRate: 0.688, convLocal: 10 }
                 }
             }
         };
@@ -403,22 +544,36 @@
             const district = province.districts[cityKey];
 
             const natCurr = car.natCurr;
+            const convNat = car.convNat || 0;
             const natLast = car.natLast;
-            const localCurr = district.localCurr;
-            const localLast = district.localLast;
+            const localCurr = Math.round(natCurr * district.localRate);
+            const convLocal = district.convLocal !== undefined ? district.convLocal : 10;
+            const localLast = natLast * district.localRate;
+            const convTotal = convNat + convLocal;
 
-            const totalCurr = natCurr + localCurr;
-            const totalLast = natLast + localLast;
-            const finalPrice = car.price - totalCurr;
-            const diff = totalCurr - totalLast;
+            // 기본 보조금 (ev.or.kr 기준: 국비+지방비)
+            const totalBase = natCurr + localCurr;
+            const finalBase = car.price - totalBase;
+
+            // 전환지원금 포함
+            const totalAll = natCurr + localCurr + convTotal;
+            const finalAll = car.price - totalAll;
+
+            const totalLast = Math.round(natLast + localLast);
+            const diff = totalBase - totalLast;
 
             document.getElementById('resultArea').classList.remove('hidden');
             document.getElementById('resTitle').innerText = `${car.name} (${province.name} ${district.name}) 보조금 분석`;
             document.getElementById('resPrice').innerText = car.price.toLocaleString();
             document.getElementById('resNatCurrent').innerText = `${natCurr} 만원`;
             document.getElementById('resLocalCurrent').innerText = `${localCurr} 만원`;
-            document.getElementById('resTotalCurrent').innerText = `${totalCurr} 만원`;
-            document.getElementById('resFinalPrice').innerText = `${finalPrice.toLocaleString()} 만원`;
+            document.getElementById('resTotalBase').innerText = `${totalBase} 만원`;
+            document.getElementById('resFinalBase').innerText = `${finalBase.toLocaleString()} 만원`;
+            document.getElementById('resConvNat').innerText = `${convNat} 만원`;
+            document.getElementById('resConvLocal').innerText = `${convLocal} 만원`;
+            document.getElementById('resConvTotal').innerText = `${convTotal} 만원`;
+            document.getElementById('resTotalAll').innerText = `${totalAll} 만원`;
+            document.getElementById('resFinalAll').innerText = `${finalAll.toLocaleString()} 만원`;
 
             document.getElementById('resTotalLastYear').innerText = `${totalLast} 만원`;
 
@@ -472,7 +627,8 @@
                 const firstDistrictKey = Object.keys(pVal.districts)[0];
                 const district = pVal.districts[firstDistrictKey];
 
-                const total = car.natCurr + district.localCurr;
+                const localCurr = Math.round(car.natCurr * district.localRate);
+                const total = car.natCurr + localCurr;
                 const final = car.price - total;
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-100 hover:bg-gray-50";
