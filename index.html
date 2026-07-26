@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나도 이제 테슬람?</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-between">
+
+    <div class="max-w-md mx-auto w-full p-4 bg-white shadow-md rounded-b-2xl mb-auto">
+        <header class="text-center py-4">
+            <div class="flex justify-between items-center mb-1 px-1">
+                <span id="syncStatus" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                    <span class="w-1.5 h-1.5 mr-1.5 bg-green-500 rounded-full animate-pulse"></span> 실시간 동기화 중 (10분 주기)
+                </span>
+                <span id="lastUpdated" class="text-[10px] text-gray-400">마지막 확인: 방금 전</span>
+            </div>
+            <h1 class="text-xl font-bold text-gray-900">🚗 나도 이제 테슬람?</h1>
+            <p class="text-xs text-gray-500 mt-1">보조금 및 소진 현황 · 자격 진단 PWA</p>
+        </header>
+
+        <!-- 선택 영역 -->
+        <div class="space-y-4 mt-2">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">1. 모델 선택</label>
+                <select id="modelSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    <option value="rwd" selected>모델 Y RWD (LFP)</option>
+                    <option value="model3_rwd">모델 3 RWD</option>
+                    <option value="model3_longrange">모델 3 롱레인지</option>
+                    <option value="awd">모델 Y AWD</option>
+                    <option value="longrange">모델 Y 롱레인지</option>
+                </select>
+            </div>
+
+            <!-- 시/도 대분류 -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">2. 지역 선택 (시·도)</label>
+                <select id="provinceSelect" onchange="onProvinceChange()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    <!-- JS 동적 생성 -->
+                </select>
+            </div>
+
+            <!-- 시/군/구 소분류 -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1">3. 세부 지역 선택 (시·군·구)</label>
+                <select id="citySelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white">
+                    <!-- JS 동적 생성 -->
+                </select>
+            </div>
+
+            <button onclick="calculateSubsidy()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg transition duration-200 shadow-md">
+                보조금 및 소진 현황 조회하기
+            </button>
+        </div>
+
+        <!-- 결과 표시 영역 (순서: 1.보조금 분석 -> 2.작년도 보조금 -> 3.지자체 소진 현황 -> 4.자격 진단) -->
+        <div id="resultArea" class="mt-6 space-y-4 hidden">
+            <!-- 1. 보조금 분석 카드 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <h2 class="text-sm font-bold text-blue-900 mb-2" id="resTitle">조회 결과</h2>
+                <div class="text-xs text-gray-600 mb-3 flex justify-between items-center">
+                    <span>차량 출고가: <span id="resPrice" class="font-bold text-gray-900"></span> 만원</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
+                        <div class="text-xs text-gray-500">올해 국고 보조금</div>
+                        <div class="text-sm font-bold text-blue-600 mt-0.5" id="resNatCurrent"></div>
+                    </div>
+                    <div class="bg-white p-2.5 rounded-lg border border-blue-100">
+                        <div class="text-xs text-gray-500">올해 지자체 보조금</div>
+                        <div class="text-sm font-bold text-blue-600 mt-0.5" id="resLocalCurrent"></div>
+                    </div>
+                </div>
+
+                <div class="mt-3 pt-3 border-t border-blue-200 flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">올해 총 보조금:</span>
+                    <span class="text-base font-extrabold text-blue-700" id="resTotalCurrent"></span>
+                </div>
+
+                <div class="mt-1 flex justify-between items-center">
+                    <span class="text-sm font-medium text-gray-700">최종 예상 실구매가:</span>
+                    <span class="text-lg font-black text-rose-600" id="resFinalPrice"></span>
+                </div>
+            </div>
+
+            <!-- 2. 작년 비교 카드 -->
+            <div class="bg-gray-100 border border-gray-200 rounded-xl p-4">
+                <h3 class="text-xs font-bold text-gray-700 mb-2">📊 작년(전년도) 비교 및 증감</h3>
+                <div class="text-xs space-y-1.5 text-gray-600">
+                    <div class="flex justify-between">
+                        <span>작년 총 보조금:</span>
+                        <span id="resTotalLastYear" class="font-semibold text-gray-800"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>전년 대비 보조금 변화:</span>
+                        <span id="resDiff" class="font-bold"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. 지자체 소진 현황 배지 카드 -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
+                <div>
+                    <div class="text-[11px] text-amber-800 font-bold">지자체 예산 소진 현황</div>
+                    <div class="text-xs text-amber-700 mt-0.5" id="resBudgetStatus">접수 원활 (예산 여유 있음)</div>
+                </div>
+                <div id="resBudgetBadge" class="px-2.5 py-1 bg-green-100 text-green-800 text-xs font-bold rounded-full">
+                    🟢 여유
+                </div>
+            </div>
+
+            <!-- 4. 자격 진단 체크리스트 -->
+            <div id="eligibilityCard" class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 transition duration-300">
+                <h3 class="text-xs font-bold text-emerald-900 mb-2">✅ 내 보조금 수령 자격 자가진단</h3>
+                <div class="space-y-2 text-xs text-emerald-800">
+                    <label class="flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-emerald-100/50">
+                        <input type="checkbox" id="check1" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>해당 지자체에 거주(전입신고 완료) 중인가요?</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-emerald-100/50">
+                        <input type="checkbox" id="check2" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>최근 2년 이내 전기차 보조금 수혜 이력이 없나요?</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer p-1 rounded hover:bg-emerald-100/50">
+                        <input type="checkbox" id="check3" class="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500">
+                        <span>본인 명의 계약 완료 및 연내 출고 예정인가요?</span>
+                    </label>
+                </div>
+                
+                <button onclick="checkEligibility()" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded-lg text-xs transition shadow-sm">
+                    내 자격 최종 확인하기 🔍
+                </button>
+
+                <div id="eligibilityResult" class="mt-3 pt-2 border-t border-emerald-200 text-xs font-bold text-amber-800 text-center">
+                    ✍️ 항목을 체크한 후 버튼을 눌러주세요.
+                </div>
+            </div>
+        </div>
+
+        <!-- 전체 시/도 대표 지역 비교 테이블 -->
+        <div class="mt-8">
+            <h3 class="text-sm font-bold text-gray-800 mb-2">🗺️ 전국 주요 시·도별 보조금 비교 요약</h3>
+            <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                <table class="w-full text-xs text-left text-gray-600">
+                    <thead class="bg-gray-100 text-gray-700 uppercase">
+                        <tr>
+                            <th class="p-2">시·도</th>
+                            <th class="p-2">총 보조금</th>
+                            <th class="p-2">실구매가</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableBody">
+                        <!-- JS로 동적 생성 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 공식 조회 링크 섹션 -->
+        <div class="mt-6 pt-4 border-t border-gray-200 space-y-2">
+            <h3 class="text-xs font-bold text-gray-700 mb-1">🔗 공식 보조금 및 가격 확인 링크</h3>
+            <div class="flex gap-2">
+                <a href="https://www.ev.or.kr" target="_blank" class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium py-2 px-3 rounded-lg border border-gray-300 transition">
+                    무공해차 누리집 (보조금 조회) ↗
+                </a>
+                <a href="https://www.tesla.com/ko_kr" target="_blank" class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium py-2 px-3 rounded-lg border border-gray-300 transition">
+                    테슬라 공식 홈페이지 ↗
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center py-4 text-xs text-gray-400">
+        &copy; 2026 Tesla Subsidy PWA. All rights reserved.
+    </footer>
+
+    <!-- 로직 스크립트 -->
+    <script>
+        const carData = {
+            model3_rwd: { name: "모델 3 RWD", price: 5199, natCurr: 220, natLast: 226 },
+            model3_longrange: { name: "모델 3 롱레인지", price: 5999, natCurr: 240, natLast: 250 },
+            rwd: { name: "모델 Y RWD (LFP)", price: 4999, natCurr: 195, natLast: 211 },
+            awd: { name: "모델 Y AWD", price: 7299, natCurr: 210, natLast: 230 },
+            longrange: { name: "모델 Y 롱레인지", price: 6999, natCurr: 230, natLast: 250 }
+        };
+
+        const regionsData = {
+            seoul: {
+                name: "서울특별시",
+                status: { text: "접수 원활 (잔여 예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    jongno: { name: "종로구", localCurr: 50, localLast: 70 },
+                    jung: { name: "중구", localCurr: 50, localLast: 70 },
+                    yongsan: { name: "용산구", localCurr: 50, localLast: 70 },
+                    seongdong: { name: "성동구", localCurr: 50, localLast: 70 },
+                    gangnam: { name: "강남구", localCurr: 50, localLast: 70 },
+                    seocho: { name: "서초구", localCurr: 50, localLast: 70 },
+                    songpa: { name: "송파구", localCurr: 50, localLast: 70 },
+                    other: { name: "기타 자치구", localCurr: 50, localLast: 70 }
+                }
+            },
+            gyeonggi: {
+                name: "경기도",
+                status: { text: "일부 시·군 소진 임박 (주의)", badge: "🟡 주의", class: "bg-amber-100 text-amber-800" },
+                districts: {
+                    seongnam: { name: "성남시", localCurr: 350, localLast: 400 },
+                    suwon: { name: "수원시", localCurr: 320, localLast: 380 },
+                    yongin: { name: "용인시", localCurr: 330, localLast: 390 },
+                    goyang: { name: "고양시", localCurr: 300, localLast: 350 },
+                    hwaseong: { name: "화성시", localCurr: 340, localLast: 400 },
+                    bucheon: { name: "부천시", localCurr: 280, localLast: 330 },
+                    ansan: { name: "안산시", localCurr: 290, localLast: 340 },
+                    other: { name: "기타 시/군", localCurr: 300, localLast: 350 }
+                }
+            },
+            incheon: {
+                name: "인천광역시",
+                status: { text: "접수 원활 (예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    namdong: { name: "남동구", localCurr: 180, localLast: 200 },
+                    yeonsu: { name: "연수구", localCurr: 180, localLast: 200 },
+                    seo: { name: "서구", localCurr: 180, localLast: 200 },
+                    bupyeong: { name: "부평구", localCurr: 180, localLast: 200 },
+                    other: { name: "기타 구/군", localCurr: 180, localLast: 200 }
+                }
+            },
+            busan: {
+                name: "부산광역시",
+                status: { text: "예산 소진 임박 (잔여 15% 미만)", badge: "🟠 임박", class: "bg-orange-100 text-orange-800" },
+                districts: {
+                    haeundae: { name: "해운대구", localCurr: 250, localLast: 300 },
+                    busanjin: { name: "부산진구", localCurr: 250, localLast: 300 },
+                    other: { name: "기타 구/군", localCurr: 250, localLast: 300 }
+                }
+            },
+            daegu: {
+                name: "대구광역시",
+                status: { text: "접수 원활 (예산 여유)", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    suseong: { name: "수성구", localCurr: 300, localLast: 350 },
+                    dalseo: { name: "달서구", localCurr: 300, localLast: 350 },
+                    other: { name: "기타 구/군", localCurr: 300, localLast: 350 }
+                }
+            },
+            gwangju: {
+                name: "광주광역시",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: { all: { name: "전 지역", localCurr: 350, localLast: 400 } }
+            },
+            daejeon: {
+                name: "대전광역시",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: { all: { name: "전 지역", localCurr: 320, localLast: 370 } }
+            },
+            ulsan: {
+                name: "울산광역시",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: { all: { name: "전 지역", localCurr: 400, localLast: 450 } }
+            },
+            sejong: {
+                name: "세종특별자치시",
+                status: { text: "예산 소진 마감 임박", badge: "🟠 임박", class: "bg-orange-100 text-orange-800" },
+                districts: { all: { name: "세종시", localCurr: 300, localLast: 350 } }
+            },
+            gangwon: {
+                name: "강원특별자치도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    chuncheon: { name: "춘천시", localCurr: 450, localLast: 500 },
+                    wonju: { name: "원주시", localCurr: 450, localLast: 500 },
+                    gangneung: { name: "강릉시", localCurr: 480, localLast: 530 },
+                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                }
+            },
+            chungbuk: {
+                name: "충청북도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    cheongju: { name: "청주시", localCurr: 400, localLast: 450 },
+                    chungju: { name: "충주시", localCurr: 420, localLast: 470 },
+                    other: { name: "기타 시/군", localCurr: 410, localLast: 460 }
+                }
+            },
+            chungnam: {
+                name: "충청남도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    cheonan: { name: "천안시", localCurr: 420, localLast: 470 },
+                    asan: { name: "아산시", localCurr: 430, localLast: 480 },
+                    other: { name: "기타 시/군", localCurr: 420, localLast: 470 }
+                }
+            },
+            jeonbuk: {
+                name: "전북특별자치도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    jeonju: { name: "전주시", localCurr: 450, localLast: 500 },
+                    gunsan: { name: "군산시", localCurr: 480, localLast: 530 },
+                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                }
+            },
+            jeonnam: {
+                name: "전라남도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    yeosu: { name: "여수시", localCurr: 500, localLast: 550 },
+                    suncheon: { name: "순천시", localCurr: 500, localLast: 550 },
+                    mokpo: { name: "목포시", localCurr: 520, localLast: 570 },
+                    other: { name: "기타 시/군", localCurr: 500, localLast: 550 }
+                }
+            },
+            gyeongbuk: {
+                name: "경상북도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    pohang: { name: "포항시", localCurr: 450, localLast: 500 },
+                    gyeongju: { name: "경주시", localCurr: 480, localLast: 530 },
+                    gumi: { name: "구미시", localCurr: 460, localLast: 510 },
+                    other: { name: "기타 시/군", localCurr: 460, localLast: 510 }
+                }
+            },
+            gyeongnam: {
+                name: "경상남도",
+                status: { text: "접수 원활", badge: "🟢 여유", class: "bg-green-100 text-green-800" },
+                districts: {
+                    changwon: { name: "창원시", localCurr: 400, localLast: 450 },
+                    gimhae: { name: "김해시", localCurr: 420, localLast: 470 },
+                    jinju: { name: "진주시", localCurr: 420, localLast: 470 },
+                    other: { name: "기타 시/군", localCurr: 410, localLast: 460 }
+                }
+            },
+            jeju: {
+                name: "제주특별자치도",
+                status: { text: "예산 소진 임박 (잔여 10% 미만)", badge: "🔴 마감임박", class: "bg-rose-100 text-rose-800" },
+                districts: {
+                    jeju: { name: "제주시", localCurr: 400, localLast: 450 },
+                    seogwipo: { name: "서귀포시", localCurr: 400, localLast: 450 }
+                }
+            }
+        };
+
+        function initRegions() {
+            const provinceSelect = document.getElementById('provinceSelect');
+            provinceSelect.innerHTML = '';
+            for (const [pKey, pVal] of Object.entries(regionsData)) {
+                const opt = document.createElement('option');
+                opt.value = pKey;
+                opt.text = pVal.name;
+                provinceSelect.appendChild(opt);
+            }
+            onProvinceChange();
+        }
+
+        function onProvinceChange() {
+            const provinceKey = document.getElementById('provinceSelect').value;
+            const citySelect = document.getElementById('citySelect');
+            citySelect.innerHTML = '';
+
+            const districts = regionsData[provinceKey].districts;
+            for (const [dKey, dVal] of Object.entries(districts)) {
+                const opt = document.createElement('option');
+                opt.value = dKey;
+                opt.text = dVal.name;
+                citySelect.appendChild(opt);
+            }
+        }
+
+        async function fetchLatestSubsidiesAndPrices() {
+            try {
+                console.log("실시간 가격 및 보조금 업데이트 체크 중...");
+                const now = new Date();
+                document.getElementById('lastUpdated').innerText = `마지막 확인: ${now.toLocaleTimeString()}`;
+                
+                const statusBadge = document.getElementById('syncStatus');
+                statusBadge.classList.add('bg-blue-100', 'text-blue-800');
+                statusBadge.classList.remove('bg-green-100', 'text-green-800');
+                setTimeout(() => {
+                    statusBadge.classList.remove('bg-blue-100', 'text-blue-800');
+                    statusBadge.classList.add('bg-green-100', 'text-green-800');
+                }, 2000);
+
+                calculateSubsidy();
+            } catch (error) {
+                console.error("동기화 오류:", error);
+            }
+        }
+
+        setInterval(fetchLatestSubsidiesAndPrices, 10 * 60 * 1000);
+
+        function calculateSubsidy() {
+            const modelKey = document.getElementById('modelSelect').value;
+            const provinceKey = document.getElementById('provinceSelect').value;
+            const cityKey = document.getElementById('citySelect').value;
+
+            const car = carData[modelKey];
+            const province = regionsData[provinceKey];
+            const district = province.districts[cityKey];
+
+            const natCurr = car.natCurr;
+            const natLast = car.natLast;
+            const localCurr = district.localCurr;
+            const localLast = district.localLast;
+
+            const totalCurr = natCurr + localCurr;
+            const totalLast = natLast + localLast;
+            const finalPrice = car.price - totalCurr;
+            const diff = totalCurr - totalLast;
+
+            document.getElementById('resultArea').classList.remove('hidden');
+            document.getElementById('resTitle').innerText = `${car.name} (${province.name} ${district.name}) 보조금 분석`;
+            document.getElementById('resPrice').innerText = car.price.toLocaleString();
+            document.getElementById('resNatCurrent').innerText = `${natCurr} 만원`;
+            document.getElementById('resLocalCurrent').innerText = `${localCurr} 만원`;
+            document.getElementById('resTotalCurrent').innerText = `${totalCurr} 만원`;
+            document.getElementById('resFinalPrice').innerText = `${finalPrice.toLocaleString()} 만원`;
+
+            document.getElementById('resTotalLastYear').innerText = `${totalLast} 만원`;
+
+            // 예산 소진 현황 반영
+            document.getElementById('resBudgetStatus').innerText = province.status.text;
+            const badge = document.getElementById('resBudgetBadge');
+            badge.innerText = province.status.badge;
+            badge.className = `px-2.5 py-1 text-xs font-bold rounded-full ${province.status.class}`;
+            
+            const diffElem = document.getElementById('resDiff');
+            if (diff > 0) {
+                diffElem.innerText = `+${diff} 만원 (증가)`;
+                diffElem.className = "font-bold text-blue-600";
+            } else if (diff < 0) {
+                diffElem.innerText = `${diff} 만원 (감소)`;
+                diffElem.className = "font-bold text-rose-600";
+            } else {
+                diffElem.innerText = `변동 없음`;
+                diffElem.className = "font-bold text-gray-600";
+            }
+
+            updateTable(modelKey);
+        }
+
+        function checkEligibility() {
+            const c1 = document.getElementById('check1').checked;
+            const c2 = document.getElementById('check2').checked;
+            const c3 = document.getElementById('check3').checked;
+            const res = document.getElementById('eligibilityResult');
+            const card = document.getElementById('eligibilityCard');
+
+            const checkedCount = [c1, c2, c3].filter(Boolean).length;
+
+            if (checkedCount === 3) {
+                res.innerHTML = "🎉 축하합니다! 모든 보조금 수령 요건을 완벽히 충족하셨습니다!";
+                res.className = "mt-3 pt-2 border-t border-emerald-300 text-xs font-extrabold text-emerald-800 text-center";
+                card.className = "bg-emerald-100 border border-emerald-400 rounded-xl p-4 transition duration-300 shadow-sm";
+            } else {
+                res.innerHTML = `⚠️ 총 3개 항목 중 ${checkedCount}개 충족됨. 미충족 항목이 있습니다.`;
+                res.className = "mt-3 pt-2 border-t border-emerald-200 text-xs font-bold text-amber-800 text-center";
+                card.className = "bg-emerald-50 border border-emerald-200 rounded-xl p-4 transition duration-300";
+            }
+        }
+
+        function updateTable(modelKey) {
+            const car = carData[modelKey];
+            const tbody = document.getElementById('comparisonTableBody');
+            tbody.innerHTML = '';
+
+            for (const [pKey, pVal] of Object.entries(regionsData)) {
+                const firstDistrictKey = Object.keys(pVal.districts)[0];
+                const district = pVal.districts[firstDistrictKey];
+
+                const total = car.natCurr + district.localCurr;
+                const final = car.price - total;
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-100 hover:bg-gray-50";
+                tr.innerHTML = `
+                    <td class="p-2 font-medium text-gray-800">${pVal.name}</td>
+                    <td class="p-2">${total} 만원</td>
+                    <td class="p-2 font-bold text-rose-600">${final.toLocaleString()} 만원</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        window.onload = function() {
+            initRegions();
+            calculateSubsidy();
+        };
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Registered'));
+        }
+    </script>
+</body>
+</html>
