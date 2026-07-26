@@ -8,6 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
+    <!-- Google AdSense (가입 후 data-ad-client 값을 YOUR_PUBLISHER_ID로 교체) -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID"
+        crossorigin="anonymous"></script>
     <meta name="theme-color" content="#3b82f6">
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col justify-between">
@@ -58,6 +61,15 @@
                 보조금 및 소진 현황 조회하기
             </button>
         </div>
+
+        <!-- 광고1: 선택 영역 하단 -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+             data-ad-slot="YOUR_AD_SLOT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 
         <!-- 결과 표시 영역 (순서: 1.기본보조금 -> 2.전환지원금 -> 3.작년 비교 -> 4.소진 현황 -> 5.자격 진단) -->
         <div id="resultArea" class="mt-6 space-y-4 hidden">
@@ -171,6 +183,15 @@
                 </div>
             </div>
         </div>
+
+        <!-- 광고2: 비교 테이블 상단 -->
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-YOUR_PUBLISHER_ID"
+             data-ad-slot="YOUR_AD_SLOT_ID"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 
         <!-- 전체 시/도 대표 지역 비교 테이블 -->
         <div class="mt-8">
